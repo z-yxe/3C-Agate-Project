@@ -1,9 +1,16 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class InputManager : MonoBehaviour
 {
+    public Action<Vector2> OnMoveInput;
+    public Action<bool> OnSprintInput;
+    public Action OnJumpInput;
+    public Action OnClimbInput;
+    public Action OnCancelClimb;
+
     private void Update()
     {
         CheckJumpInput();
@@ -15,6 +22,19 @@ public class InputManager : MonoBehaviour
         CheckCancelInput();
         CheckPunchInput();
         CheckMainMenuInput();
+        CheckMovementInput();
+    }
+
+    private void CheckMovementInput()
+    {
+        float verticalAxis = Input.GetAxis("Vertical");
+        float horizontalAxis = Input.GetAxis("Horizontal");
+        Vector2 inputAxis = new Vector2(horizontalAxis, verticalAxis);
+
+        if (OnMoveInput != null)
+        {
+            OnMoveInput(inputAxis);
+        }
     }
 
     private void CheckJumpInput()
@@ -22,7 +42,7 @@ public class InputManager : MonoBehaviour
         bool isPressJumpInput = Input.GetKeyDown(KeyCode.Space);
         if (isPressJumpInput)
         {
-
+            OnJumpInput();
         }
     }
 
@@ -31,7 +51,11 @@ public class InputManager : MonoBehaviour
         bool isHoldSprintInput = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
         if (isHoldSprintInput)
         {
-
+            OnSprintInput(true);
+        }
+        else
+        {
+            OnSprintInput(false);
         }
     }
 
@@ -58,7 +82,7 @@ public class InputManager : MonoBehaviour
         bool isPressClimbInput = Input.GetKeyDown(KeyCode.E);
         if (isPressClimbInput)
         {
-
+            OnClimbInput();
         }
     }
 
@@ -76,7 +100,10 @@ public class InputManager : MonoBehaviour
         bool isPressCancelInput = Input.GetKeyDown(KeyCode.C);
         if (isPressCancelInput)
         {
-
+            if (OnCancelClimb != null)
+            {
+                OnCancelClimb();            
+            }
         }
     }
 
