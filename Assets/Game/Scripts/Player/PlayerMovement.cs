@@ -26,6 +26,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector3 climbOffset;
     [SerializeField] private float climbSpeed;
 
+    [SerializeField] private CameraManager cameraManager;
+    [SerializeField] private Transform cameraTransform;
+
     private Rigidbody rb;
     private float rotationSmoothVelocity;
     private float speed;
@@ -37,6 +40,7 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         speed = walkSpeed;
         playerStance = PlayerStance.Stand;
+        HideAndLockCursor();
     }
 
     private void Update()
@@ -63,6 +67,12 @@ public class PlayerMovement : MonoBehaviour
         input.OnCancelClimb -= CancelClimb;
     }
 
+    private void HideAndLockCursor()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
     private void Move(Vector2 axisDirection)
     {
         Vector3 movementDirection = Vector3.zero;
@@ -71,14 +81,31 @@ public class PlayerMovement : MonoBehaviour
 
         if (isPlayerstanding)
         {
-            if (axisDirection.magnitude >= 0.1f)
+            switch (cameraManager.cameraState)
             {
-                float rotationAngle = Mathf.Atan2(axisDirection.x, axisDirection.y) * Mathf.Rad2Deg;
-                float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y, rotationAngle, ref rotationSmoothVelocity, rotationSmoothTime);
-                transform.rotation = Quaternion.Euler(0f, smoothAngle, 0f);
-                movementDirection = Quaternion.Euler(0f, rotationAngle, 0f) * Vector3.forward;
-                rb.AddForce(movementDirection * speed * Time.deltaTime);
+                case CameraState.ThirdPerson:
+                    if (axisDirection.magnitude >= 0.1f)
+                    {
+                        float rotationAngle = Mathf.Atan2(axisDirection.x, axisDirection.y) * Mathf.Rad2Deg + cameraTransform.eulerAngles.y;
+                        float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y, rotationAngle, ref rotationSmoothVelocity, rotationSmoothTime);
+                        transform.rotation = Quaternion.Euler(0f, smoothAngle, 0f);
+                        movementDirection = Quaternion.Euler(0f, rotationAngle, 0f) * Vector3.forward;
+                        rb.AddForce(movementDirection * speed * Time.deltaTime);
+                    }
+                    break;
+
+                case CameraState.FirstPerson:
+                    transform.rotation = Quaternion.Euler(0f, cameraTransform.eulerAngles.y, 0f);
+                    Vector3 verticalDirection = axisDirection.y * transform.forward;
+                    Vector3 horizontalDirection = axisDirection.x * transform.right;
+                    movementDirection = verticalDirection + horizontalDirection;
+                    rb.AddForce(movementDirection * speed * Time.deltaTime);
+                    break;
+                    
+                default:
+                    break;
             }
+            
         }
         else if (isPlayerClimbing)
         {
@@ -144,6 +171,9 @@ public class PlayerMovement : MonoBehaviour
             playerStance = PlayerStance.Climb;
             rb.useGravity = false;
             speed = climbSpeed;
+
+            cameraManager.SetFPPClampedCamera(true, transform.rotation.eulerAngles);
+            cameraManager.SetTPPFieldOfView(70f);
         }
     }
 
@@ -155,6 +185,9 @@ public class PlayerMovement : MonoBehaviour
             rb.useGravity = true;
             transform.position -= transform.forward * 0.5f;
             speed = walkSpeed;
+
+            cameraManager.SetFPPClampedCamera(false, transform.rotation.eulerAngles);
+            cameraManager.SetTPPFieldOfView(40f);
         }
     }
 }
