@@ -6,6 +6,7 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private InputManager input;
+    [SerializeField] private PlayerAudioManager playerAudio;
 
     [SerializeField] private float walkSpeed;
     [SerializeField] private float sprintSpeed;
@@ -69,7 +70,7 @@ public class PlayerMovement : MonoBehaviour
         Glide();
     }
 
-    private void Start()
+    private void OnEnable()
     {
         input.OnMoveInput += Move;
         input.OnSprintInput += Sprint;
@@ -298,6 +299,7 @@ public class PlayerMovement : MonoBehaviour
         {
             playerStance = PlayerStance.Glide;
             animator.SetBool("IsGliding", true);
+            playerAudio.PlayGlideSfx();
 
             cameraManager.SetFPPClampedCamera(true, transform.rotation.eulerAngles);
         }
@@ -309,6 +311,7 @@ public class PlayerMovement : MonoBehaviour
         {
             playerStance = PlayerStance.Stand;
             animator.SetBool("IsGliding", false);
+            playerAudio.StopGlideSfx();
 
             cameraManager.SetFPPClampedCamera(false, transform.rotation.eulerAngles);
         }
